@@ -1,0 +1,109 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile containing statistics and personal info",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The user's display name"
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address"
+        },
+        "picture": {
+          "type": "string",
+          "description": "URL of the user's profile picture"
+        },
+        "productivityScore": {
+          "type": "integer",
+          "description": "Productivity score calculated dynamically"
+        },
+        "streak": {
+          "type": "integer",
+          "description": "Daily system active streak"
+        },
+        "completedCount": {
+          "type": "integer",
+          "description": "Total number of completed tasks"
+        },
+        "totalHoursWorked": {
+          "type": "integer",
+          "description": "Total hours spent on tasks"
+        }
+      },
+      "required": ["name", "email", "productivityScore", "streak", "completedCount", "totalHoursWorked"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A task with deadlines, subtasks, and category attributes",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the task"
+        },
+        "title": {
+          "type": "string",
+          "description": "The task title"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description"
+        },
+        "category": {
+          "type": "string",
+          "description": "Category list",
+          "enum": ["Study", "Work", "Personal", "Other"]
+        },
+        "deadline": {
+          "type": "string",
+          "description": "ISO format or date representation"
+        },
+        "estimatedHours": {
+          "type": "number",
+          "description": "Estimated count of hours"
+        },
+        "priority": {
+          "type": "string",
+          "description": "Importance weight",
+          "enum": ["Critical", "High", "Medium", "Low"]
+        },
+        "tags": {
+          "type": "array",
+          "description": "String list tags"
+        },
+        "status": {
+          "type": "string",
+          "description": "Completion state",
+          "enum": ["Pending", "In Progress", "Completed"]
+        },
+        "subtasks": {
+          "type": "array",
+          "description": "Nested list of checklist subtasks"
+        },
+        "scheduledStart": {
+          "type": "string",
+          "description": "Assigned calendar start slot"
+        },
+        "scheduledEnd": {
+          "type": "string",
+          "description": "Assigned calendar end slot"
+        }
+      },
+      "required": ["id", "title", "description", "category", "deadline", "estimatedHours", "priority", "status", "subtasks"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profiles registered with the application"
+    },
+    "users/{userId}/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/Task" },
+      "description": "Personal task tracker records"
+    }
+  }
+}

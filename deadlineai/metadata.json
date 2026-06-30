@@ -1,0 +1,6 @@
+{
+  "name": "DeadlineAI",
+  "description": "An intelligent AI companion that actively schedules tasks, prioritizes work, and guides you to meet critical deadlines.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

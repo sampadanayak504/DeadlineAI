@@ -1,0 +1,83 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net catches and denies any unspecified paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Global Security primitives
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+
+    // User Profile schema verification helper
+    function isValidUserProfile(profile) {
+      return profile.keys().hasAll(['name', 'email', 'productivityScore', 'streak', 'completedCount', 'totalHoursWorked'])
+        && profile.name is string && profile.name.size() <= 200
+        && profile.email is string && profile.email.size() <= 200
+        && profile.productivityScore is int
+        && profile.streak is int
+        && profile.completedCount is int
+        && profile.totalHoursWorked is int;
+    }
+
+    // Task Schema verification helper
+    function isValidTask(task) {
+      return task.keys().hasAll(['id', 'title', 'description', 'category', 'deadline', 'estimatedHours', 'priority', 'status', 'subtasks'])
+        && task.id is string && task.id.size() <= 128
+        && task.title is string && task.title.size() <= 256
+        && task.description is string && task.description.size() <= 5000
+        && task.category is string && (task.category == 'Study' || task.category == 'Work' || task.category == 'Personal' || task.category == 'Other')
+        && task.deadline is string && task.deadline.size() <= 128
+        && task.estimatedHours is number
+        && task.priority is string && (task.priority == 'Critical' || task.priority == 'High' || task.priority == 'Medium' || task.priority == 'Low')
+        && task.status is string && (task.status == 'Pending' || task.status == 'In Progress' || task.status == 'Completed')
+        && task.subtasks is list && task.subtasks.size() <= 100;
+    }
+
+    // Individual routes mapping
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserProfile(incoming());
+      allow update: if isOwner(userId) && isValidUserProfile(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasAny(['name', 'picture', 'productivityScore', 'streak', 'completedCount', 'totalHoursWorked'])
+      );
+      allow delete: if false;
+
+      match /tasks/{taskId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(taskId) && isValidTask(incoming());
+        allow update: if isOwner(userId) && isValidId(taskId) && isValidTask(incoming()) && (
+          incoming().diff(existing()).affectedKeys().hasAny(['title', 'description', 'category', 'deadline', 'estimatedHours', 'priority', 'status', 'subtasks', 'scheduledStart', 'scheduledEnd', 'dueTime', 'createdAt', 'updatedAt', 'reminderSettings'])
+        );
+        allow delete: if isOwner(userId) && isValidId(taskId);
+      }
+
+      match /planner/{reminderId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(reminderId);
+        allow update: if isOwner(userId) && isValidId(reminderId);
+        allow delete: if isOwner(userId) && isValidId(reminderId);
+      }
+
+      match /reminders/{reminderId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(reminderId);
+        allow update: if isOwner(userId) && isValidId(reminderId);
+        allow delete: if isOwner(userId) && isValidId(reminderId);
+      }
+
+      match /events/{eventId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(eventId);
+        allow update: if isOwner(userId) && isValidId(eventId);
+        allow delete: if isOwner(userId) && isValidId(eventId);
+      }
+    }
+  }
+}
